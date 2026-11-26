@@ -10,6 +10,10 @@ export const site = {
   timezone: 'Asia/Seoul',
 };
 
+const TOPICS = ['졸업요건', '전공필수', '수강신청', '장학', '휴복학', '현장실습', '기타'];
+const TOPIC_ORDER = TOPICS;
+const LIFE_KINDS = ['학과사무실', '과방', '사물함', '학생회비', '건물', '학식', '기타'];
+const LIFE_ORDER = LIFE_KINDS;
 const CATS = ['학사', '졸업', '수강', '장학', '진로', '행사', '복지', '시설', '학생회', '기타'];
 
 const published = {
@@ -30,26 +34,36 @@ const refs = {
     { name: 'description', label: '여기서 확인할 수 있는 것 (선택)', widget: 'string', required: false },
   ],
 };
+const TBD = '모르면 비워두세요. 비워둔 칸은 AI에게 [확인 필요]로 표시돼요.';
+const source = { name: 'source', label: '출처 (공식 원문 링크)', widget: 'string', required: false, hint: '학교·학과 공식 페이지 주소. 학생회가 직접 정한 내용이면 "학생회 직접 안내"라고 적어주세요. ' + TBD };
+const checked = { name: 'checked', label: '최종확인일', widget: 'date', required: false, default: '{{now}}', hint: '이 내용이 맞는지 마지막으로 확인한 날' };
 const category = { name: 'category', label: '분류', widget: 'select', options: CATS, default: '기타' };
 
 export const collections = [
   {
     name: 'notices', label: '공지사항', singular: '공지', icon: 'campaign',
-    description: '학생회·학과 공지. 마감일이 있으면 꼭 넣어주세요.',
+    description: '모든 공지는 같은 양식: 대상 → 해야 할 행동 → 정확한 마감 → 제출 경로 → 이미 처리한 사람 예외 → 출처와 작성일.',
     schemaType: 'Article',
     sort: (a, b) => (b.pinned - a.pinned) || cmp(b.date, a.date),
-    columns: ['title', 'date', 'category', 'pinned'],
+    columns: ['title', 'date', 'deadline', 'pinned'],
     fields: [
       { name: 'title', label: '제목', widget: 'string' },
-      { name: 'date', label: '게시일', widget: 'date', default: '{{now}}' },
+      { name: 'target', label: '1. 대상', widget: 'text', required: false, hint: '학년, 학번, 전공 등. 예: 산업공학과 3~4학년 중 2013학번 이후 입학자. ' + TBD },
+      { name: 'action', label: '2. 해야 할 행동', widget: 'text', required: false, hint: '학생이 무엇을 하면 되는지 동사로. ' + TBD },
+      { name: 'deadline', label: '3. 마감 날짜', widget: 'date', required: false, hint: '요일은 자동으로 붙어요. 마감이 없으면 비우고 아래 "마감 메모"에 "해당 없음"이라고 적어주세요.' },
+      { name: 'deadline_time', label: '3. 마감 시각', widget: 'string', required: false, hint: '예: 18:00 또는 23:59' },
+      { name: 'deadline_note', label: '3. 마감 메모 (기한 충돌 등)', widget: 'text', required: false, hint: '출처끼리 기한이 다르면 하나를 고르지 말고 "기한 충돌: A는 ○○, B는 ○○, 확인 중"처럼 적어주세요.' },
+      { name: 'submit_via', label: '4. 제출 경로', widget: 'text', required: false, hint: 'LMS, 이메일, 종이 제출, HY-in 메뉴 등. 공식 안내에 적힌 그대로. ' + TBD },
+      { name: 'exceptions', label: '5. 이미 처리한 사람 예외', widget: 'text', required: false, hint: '예: 이미 제출한 사람은 다시 내지 않아도 됨. 없으면 "해당 없음". ' + TBD },
+      { ...source, label: '6. 출처 (공식 원문 링크)' },
+      { name: 'date', label: '6. 작성일', widget: 'date', default: '{{now}}' },
+      checked,
       category,
       summary,
-      { name: 'deadline', label: '마감일 (있으면)', widget: 'date', required: false },
-      { name: 'link', label: '원문·신청 링크', widget: 'string', required: false, hint: 'https:// 로 시작하는 주소' },
       { name: 'pinned', label: '상단 고정', widget: 'boolean', default: false },
       refs,
       published,
-      body(),
+      body('추가 설명 (선택)'),
     ],
   },
   {
@@ -68,9 +82,52 @@ export const collections = [
       { name: 'kind', label: '종류', widget: 'select', options: ['학생회 행사', '학과 행사', '학사 일정', '복지', '진로', '기타'], default: '학생회 행사' },
       summary,
       { name: 'apply_link', label: '신청 링크', widget: 'string', required: false },
+      source,
+      checked,
       refs,
       published,
       body('상세 안내'),
+    ],
+  },
+  {
+    name: 'faq', label: '학사 FAQ (입학연도별)', singular: '질문', icon: 'quiz',
+    description: '졸업요건, 전공필수, 수강신청, 장학, 휴복학, 현장실습. 입학연도마다 기준이 다를 수 있으니 "적용 입학연도"를 꼭 먼저 적어주세요.',
+    schemaType: 'FAQ',
+    sort: (a, b) => cmp(TOPIC_ORDER.indexOf(a.topic), TOPIC_ORDER.indexOf(b.topic)) || cmp(a.title, b.title),
+    columns: ['title', 'topic', 'cohort'],
+    fields: [
+      { name: 'topic', label: '주제', widget: 'select', options: TOPICS, default: '졸업요건' },
+      { name: 'cohort', label: '적용 입학연도', widget: 'string', required: false, hint: '예: 2013학번 이후 전체 / 2024학번 이후 / 모든 학번 공통. 확인 안 되면 비워두세요.' },
+      { name: 'title', label: '질문', widget: 'string', hint: '학생이 실제로 물어볼 말투로.' },
+      { name: 'summary', label: '짧은 답 (1~3문장)', widget: 'text', required: false },
+      source,
+      checked,
+      refs,
+      published,
+      body('자세한 설명 (선택)'),
+    ],
+  },
+  {
+    name: 'life', label: '생활정보', singular: '생활정보', icon: 'apartment',
+    description: '건물, 학과사무실, 과방, 사물함, 학생회비, 학식. 위치는 항상 "건물 > 층 > 호실" 순서로.',
+    schemaType: 'Place',
+    sort: (a, b) => cmp(LIFE_ORDER.indexOf(a.kind), LIFE_ORDER.indexOf(b.kind)) || cmp(a.title, b.title),
+    columns: ['title', 'kind', 'location'],
+    fields: [
+      { name: 'title', label: '이름', widget: 'string', hint: '예: 산업공학과 학과사무실' },
+      { name: 'kind', label: '종류', widget: 'select', options: LIFE_KINDS, default: '기타' },
+      { name: 'location', label: '위치 (건물 > 층 > 호실)', widget: 'string', required: false, hint: '반드시 "건물 > 층 > 호실" 순서. 모르는 칸은 [확인 필요]. 예: 제1공학관 > 3층 > [확인 필요]' },
+      { name: 'aliases', label: '별칭·설명', widget: 'string', required: false, hint: '위치 뒤에 붙는 설명. 예: 시스템응용공학부 과방, "1공"' },
+      { name: 'building_code', label: '건물 코드', widget: 'string', required: false, hint: '공식 출처에서 확인한 것만. 예: H211' },
+      { name: 'map_link', label: '지도 링크', widget: 'string', required: false },
+      { name: 'hours', label: '운영·이용 시간', widget: 'string', required: false },
+      { name: 'contact', label: '문의처', widget: 'string', required: false },
+      { name: 'summary', label: '이용 방법·핵심 안내', widget: 'text', required: false },
+      source,
+      checked,
+      refs,
+      published,
+      body('자세한 설명 (선택)'),
     ],
   },
   {
@@ -82,7 +139,8 @@ export const collections = [
       { name: 'title', label: '제목', widget: 'string' },
       category,
       summary,
-      { name: 'updated', label: '확인한 날짜', widget: 'date', default: '{{now}}' },
+      source,
+      { name: 'updated', label: '최종확인일', widget: 'date', default: '{{now}}' },
       { name: 'order', label: '정렬 순서', widget: 'number', required: false, hint: '작은 숫자가 먼저 나와요' },
       refs,
       published,
@@ -102,6 +160,8 @@ export const collections = [
       { name: 'year', label: '연도', widget: 'number', required: false },
       { name: 'author', label: '작성자 표기', widget: 'string', required: false, hint: '실명 대신 "19학번 선배"처럼 적어도 돼요' },
       summary,
+      source,
+      checked,
       refs,
       published,
       body(),
@@ -121,6 +181,8 @@ export const collections = [
       { name: 'contact', label: '신청 방법', widget: 'text', required: false, hint: '본인 동의를 받은 연락 방법만 적어주세요' },
       { name: 'available', label: '현재 멘토링 가능', widget: 'boolean', default: true },
       summary,
+      source,
+      checked,
       refs,
       published,
       body('소개'),
@@ -171,6 +233,7 @@ export const files = [
           { name: 'url', label: '주소', widget: 'string' },
           { name: 'description', label: '여기서 할 수 있는 일', widget: 'string', hint: 'AI가 어떤 질문에 이 링크를 줄지 판단하는 데 써요' },
           { name: 'category', label: '분류', widget: 'select', options: CATS, default: '기타' },
+          { name: 'checked', label: '최종확인일', widget: 'date', required: false },
         ],
       },
     ],

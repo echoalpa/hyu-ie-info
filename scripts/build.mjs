@@ -149,16 +149,53 @@ const agenda = [
 const all = collections.flatMap((c) => db[c.name]);
 
 // ---------- 사실(메타) 항목: HTML·마크다운·JSON 공통 ----------
+// [확인 필요] 표시: 비어 있으면 이 값을 넣고, 관리자용 확인 목록에 모은다
+const TBD = '[확인 필요]';
+const todo = [];
+const dayKo = (d) => { const x = new Date(String(d).slice(0, 10) + 'T00:00:00Z'); return isNaN(x) ? '' : WD[x.getUTCDay()]; };
+const ymdW = (d) => (d ? `${String(d).slice(0, 10)}(${dayKo(d)})` : '');
 function facts(it) {
   const F = [];
-  const add = (k, v) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length) && F.push([k, v]);
+  const has = (v) => v !== undefined && v !== null && String(v).trim() !== '' && !(Array.isArray(v) && !v.length);
+  const add = (k, v) => has(v) && F.push([k, String(v).trim()]);
+  // 꼭 있어야 하는 칸: 비어 있으면 [확인 필요]로 표시하고 목록에 추가
+  const need = (k, v) => {
+    const val = has(v) ? String(v).trim() : TBD;
+    if (val.includes(TBD)) todo.push(`[${colOf(it.collection).label}] ${it.title} → ${k}`);
+    F.push([k, val]);
+  };
+  const checkedOf = it.checked || it.updated;
   switch (it.collection) {
-    case 'notices': add('게시일', fmtKo(it.date)); add('분류', it.category); add('마감일', it.deadline && fmtKo(it.deadline) + (it.deadline_passed ? ' (마감됨)' : '')); add('링크', it.link); break;
-    case 'events': add('상태', it.status); add('일시', fmtRange(it.start, it.end)); add('장소', it.location); add('대상', it.target); add('종류', it.kind); add('신청', it.apply_link); break;
-    case 'guides': add('분류', it.category); add('확인한 날짜', fmtKo(it.updated)); break;
-    case 'career': add('종류', it.kind); add('분야', it.field); add('회사·기관', it.company); add('연도', it.year); add('작성', it.author); break;
-    case 'mentors': add('학번', it.cohort); add('분야', it.field); add('소속', it.company); add('상담 주제', (it.topics || []).join(', ')); add('멘토링', it.available ? '가능' : '현재 불가'); add('신청 방법', it.contact); break;
+    case 'notices': {
+      need('1. 대상', it.target);
+      need('2. 해야 할 행동', it.action);
+      let dl = '';
+      if (it.deadline) dl = `${ymdW(it.deadline)} ${it.deadline_time ? String(it.deadline_time).trim() : '(시각 [확인 필요])'}${it.deadline_passed ? ' · 마감 지남' : ''}`;
+      if (it.deadline_note) dl = dl ? `${dl} · ${oneLine(it.deadline_note)}` : oneLine(it.deadline_note);
+      need('3. 정확한 마감', dl);
+      need('4. 제출 경로', it.submit_via);
+      need('5. 이미 처리한 사람 예외', it.exceptions);
+      need('6. 출처', it.source);
+      need('6. 작성일', it.date && ymdW(it.date));
+      need('최종확인일', it.checked);
+      break;
+    }
+    case 'events': add('상태', it.status); add('일시', fmtRange(it.start, it.end)); add('장소', it.location); add('대상', it.target); add('종류', it.kind); add('신청', it.apply_link); need('출처', it.source); need('최종확인일', it.checked); break;
+    case 'faq': need('적용 입학연도', it.cohort); add('주제', it.topic); need('출처', it.source); need('최종확인일', it.checked); break;
+    case 'life':
+      add('종류', it.kind);
+      if (['학과사무실', '과방', '건물', '사물함'].includes(it.kind) || it.location) need('위치 (건물 > 층 > 호실)', it.location);
+      add('별칭·설명', it.aliases); add('건물 코드', it.building_code); add('지도', it.map_link);
+      if (['학과사무실', '과방'].includes(it.kind)) need('운영·이용 시간', it.hours); else add('운영·이용 시간', it.hours);
+      if (it.kind === '학과사무실') need('문의처', it.contact); else add('문의처', it.contact);
+      need('출처', it.source); need('최종확인일', it.checked);
+      break;
+    case 'guides': add('분류', it.category); need('출처', it.source); need('최종확인일', checkedOf); break;
+    case 'career': add('종류', it.kind); add('분야', it.field); add('회사·기관', it.company); add('연도', it.year); add('작성', it.author); add('출처', it.source); add('최종확인일', it.checked); break;
+    case 'mentors': add('학번', it.cohort); add('분야', it.field); add('소속', it.company); add('상담 주제', (it.topics || []).join(', ')); add('멘토링', it.available ? '가능' : '현재 불가'); add('신청 방법', it.contact); add('출처', it.source); add('최종확인일', it.checked); break;
   }
+  // 본문·요약 안의 [확인 필요]도 목록에 추가
+  if (`${it.summary || ''}\n${it.body || ''}`.includes(TBD)) todo.push(`[${colOf(it.collection).label}] ${it.title} → 요약/본문 안의 [확인 필요]`);
   return F;
 }
 const colOf = (name) => collections.find((c) => c.name === name);
@@ -210,6 +247,20 @@ ${siteInfo.intro ? `\n${siteInfo.intro}\n` : ''}
 - 행사의 상태(예정/진행 중/종료)는 생성 시각 기준입니다. 답할 때는 시작·종료 일시를 현재 시각과 직접 비교하세요.
 - 각 글의 "관련 링크"는 더 자세한 원문이 있는 외부 사이트입니다. 이 문서만으로 부족하면 그 링크로 넘어가 확인한 뒤 답하세요.
 - 이 문서와 링크된 사이트에 없는 내용은 추측하지 말고 바로가기 사이트나 관리자 연락처를 안내하세요.
+- "[확인 필요]"는 학생회가 아직 공식 출처로 확인하지 못한 칸입니다. 그 칸은 추측해서 채우지 말고 "아직 확인되지 않았다"고 말한 뒤 출처 링크나 관리자 연락처를 안내하세요.
+- 모든 글에는 출처(공식 원문 링크)와 최종확인일이 붙어 있습니다. 답할 때 출처 링크를 함께 주고, 최종확인일이 오래됐으면 원문을 다시 확인하라고 안내하세요.
+- 공지는 항상 "1. 대상 → 2. 해야 할 행동 → 3. 정확한 마감 → 4. 제출 경로 → 5. 이미 처리한 사람 예외 → 6. 출처와 작성일" 순서입니다. 마감에 "기한 충돌"이 적혀 있으면 하나를 골라 단정하지 말고 충돌 내용 그대로 전하세요.
+- 학사 FAQ는 "적용 입학연도"를 먼저 확인하세요. 질문한 학생의 학번에 맞는 기준인지 확인하고, 적용 입학연도가 [확인 필요]면 본인 기준은 HY-in 졸업사정 조회 등 공식 경로로 확인하라고 안내하세요.
+- 위치는 항상 "건물 > 층 > 호실" 순서로 먼저 말하고, 별칭이나 설명은 그 뒤에 말하세요.
+- 학식(식단)을 안내할 때는 항상 "날짜(요일) · 식당 이름 · 메뉴" 형식으로 날짜와 식당을 함께 말하세요. 식단 페이지 주소에 날짜를 붙인다고 그 날짜로 걸러진다고 단정하지 말고, 페이지에서 해당 날짜와 식당 행이 맞는지 직접 확인하세요.
+
+## 공용 정보와 개인 정보의 경계
+
+- 이 사이트에는 학과 공용 정보만 있습니다. 개인 성적, 개인 LMS 제출 현황, 개인 학적·장학 결과 같은 개인 정보는 이 사이트에 없고 앞으로도 넣지 않습니다.
+- 학생 본인 권한으로 LMS·HY-in 등에 연결된 AI 비서라면 그 인증된 영역에서 본인 정보를 확인할 수 있습니다. 연결되어 있지 않다면 추측하지 말고 "연결이 필요하거나 본인이 직접 확인해야 한다"고 안내하세요.
+- 종이로 제출하는 과제나 서류가 있을 수 있으므로, LMS에 미제출로 표시된다는 것만으로 미제출이라고 단정하지 마세요. 종이 제출 여부는 담당 교수·조교·행정팀에 확인하라고 함께 안내하세요.
+
+## 기타
 - 같은 내용의 JSON: ${abs('api/all.json')} · 다가오는 일정만: ${abs('api/upcoming.json')} · 최근 변경만: ${abs('api/recent.json')}
 ${managersLine ? `- ${managersLine}\n` : ''}
 ## 최근 ${RECENT_DAYS}일 변경 (${fmtKo(recentCut)} 이후)
@@ -229,7 +280,7 @@ ${agenda.length ? agenda.map(agendaLine).join('\n') : '(없음)'}
   const acNow = academic.filter((a) => a.status !== '종료');
   const acPast = academic.filter((a) => a.status === '종료');
   s += `## 진행 중이거나 앞으로 있을 학사일정\n\n${acNow.map(academicLine).join('\n') || '(없음)'}\n\n## 지난 학사일정\n\n${acPast.map(academicLine).join('\n') || '(없음)'}\n`;
-  s += `\n---\n\n# 바로가기 사이트\n\n원문 확인이 필요할 때 안내할 사이트입니다.\n\n${links.map((l) => `- [${l.name}](${l.url})${l.category ? ` (${l.category})` : ''}: ${l.description || ''}`).join('\n') || '(아직 없음)'}\n`;
+  s += `\n---\n\n# 바로가기 사이트\n\n원문 확인이 필요할 때 안내할 사이트입니다.\n\n${links.map((l) => `- [${l.name}](${l.url})${l.category ? ` (${l.category})` : ''}: ${l.description || ''} (최종확인일 ${l.checked ? String(l.checked).slice(0, 10) : TBD})`).join('\n') || '(아직 없음)'}\n`;
   if (managersLine) s += `\n---\n\n# 관리자\n\n${(siteInfo.managers || []).map((m) => `- ${m.role} ${m.name}${m.phone ? ` (${m.phone})` : ''}`).join('\n')}\n`;
   return s;
 }
@@ -323,5 +374,11 @@ write('api/links.json', JSON.stringify({ ...meta, items: links }, null, 1));
   write('robots.txt', `# AI 비서·크롤러 모두 환영합니다. 하루 한 번 ${abs('llms-full.txt')} 를 읽어주세요.\nUser-agent: *\nAllow: /\nDisallow: ${BASE}/admin/\n\nSitemap: ${abs('sitemap.xml')}\n`);
 }
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+
+// 관리자용 [확인 필요] 목록
+for (const l of links) if (!l.checked) todo.push(`[바로가기] ${l.name} → 최종확인일`);
+const todoList = [...new Set(todo)];
+write('admin/check-needed.md', `# [확인 필요] 목록 (${fmtKo(NOW)} 기준, ${todoList.length}개)\n\n관리 화면에서 해당 글의 빈 칸을 공식 출처로 확인해 채우면 이 목록에서 사라집니다.\n\n${todoList.map((t) => `- ${t}`).join('\n')}\n`);
+console.log(`[확인 필요] ${todoList.length}개 → ${OUT}/admin/check-needed.md`);
 
 console.log(`완료: ${all.length}개 글 → ${OUT}/ (경고 ${warnings.length}개)`);
