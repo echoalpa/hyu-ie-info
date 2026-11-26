@@ -1,0 +1,13 @@
+links:
+  - name: 한양대학교 포털
+    url: https://portal.hanyang.ac.kr
+    description: 수강신청, 성적·학적 조회, 장학 신청 등 학사 업무 전반
+    category: 학사
+  - name: 한양대 LMS
+    url: https://learning.hanyang.ac.kr
+    description: 강의자료, 과제 제출, 온라인 강의
+    category: 수강
+  - name: 한양대학교 백남학술정보관(도서관)
+    url: https://library.hanyang.ac.kr
+    description: 자료 검색, 열람실·스터디룸 예약
+    category: 시설

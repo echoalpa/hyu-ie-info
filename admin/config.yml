@@ -1,0 +1,465 @@
+# 자동 생성 파일입니다. 직접 고치지 말고 schema.mjs를 고친 뒤 `npm run gen-config`를 실행하세요.
+backend:
+  name: github
+  repo: echoalpa/hyu-ie-info
+  branch: main
+  auth_methods:
+    - token
+  commit_messages:
+    create: '{{collection}} 추가: {{slug}}'
+    update: '{{collection}} 수정: {{slug}}'
+    delete: '{{collection}} 삭제: {{slug}}'
+    uploadMedia: '파일 업로드: {{path}}'
+    deleteMedia: '파일 삭제: {{path}}'
+site_url: https://echoalpa.github.io/hyu-ie-info
+display_url: https://echoalpa.github.io/hyu-ie-info
+logo:
+  src: ../img/icon-512.png
+media_folder: static/uploads
+public_folder: /uploads
+collections:
+  - name: notices
+    label: 공지사항
+    label_singular: 공지
+    description: 학생회·학과 공지. 마감일이 있으면 꼭 넣어주세요.
+    icon: campaign
+    folder: content/notices
+    create: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
+    preview_path: notices/{{slug}}/
+    summary: '{{title}}'
+    fields:
+      - name: title
+        label: 제목
+        widget: string
+      - name: date
+        label: 게시일
+        widget: datetime
+        default: '{{now}}'
+        type: date
+        format: YYYY-MM-DD
+      - name: category
+        label: 분류
+        widget: select
+        default: 기타
+        options:
+          - 학사
+          - 졸업
+          - 수강
+          - 장학
+          - 진로
+          - 행사
+          - 복지
+          - 시설
+          - 학생회
+          - 기타
+      - name: summary
+        label: 한 줄 요약
+        widget: text
+        required: false
+        hint: AI 비서가 가장 먼저 읽는 문장이에요. 핵심(누가·언제·어디서·무엇을)을 한두 문장으로 적어주세요.
+      - name: deadline
+        label: 마감일 (있으면)
+        widget: datetime
+        required: false
+        type: date
+        format: YYYY-MM-DD
+      - name: link
+        label: 원문·신청 링크
+        widget: string
+        required: false
+        hint: https:// 로 시작하는 주소
+      - name: pinned
+        label: 상단 고정
+        widget: boolean
+        default: false
+      - name: published
+        label: 공개
+        widget: boolean
+        hint: 끄면 사이트와 AI에게 보이지 않아요(임시 저장용).
+        default: true
+      - name: body
+        label: 본문
+        widget: markdown
+        required: false
+  - name: events
+    label: 행사·일정
+    label_singular: 행사
+    description: 개강총회, 총MT, 간식행사, 시험기간 등 날짜가 있는 모든 일정.
+    icon: event
+    folder: content/events
+    create: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
+    preview_path: events/{{slug}}/
+    summary: '{{title}}'
+    fields:
+      - name: title
+        label: 행사명
+        widget: string
+      - name: start
+        label: 시작
+        widget: datetime
+        format: YYYY-MM-DDTHH:mm
+      - name: end
+        label: 종료 (선택)
+        widget: datetime
+        required: false
+        format: YYYY-MM-DDTHH:mm
+      - name: location
+        label: 장소
+        widget: string
+        required: false
+        hint: '예: 제1공학관 과방 앞'
+      - name: target
+        label: 대상
+        widget: string
+        required: false
+        hint: '예: 산업공학과 재학생 누구나'
+      - name: kind
+        label: 종류
+        widget: select
+        default: 학생회 행사
+        options:
+          - 학생회 행사
+          - 학과 행사
+          - 학사 일정
+          - 복지
+          - 진로
+          - 기타
+      - name: summary
+        label: 한 줄 요약
+        widget: text
+        required: false
+        hint: AI 비서가 가장 먼저 읽는 문장이에요. 핵심(누가·언제·어디서·무엇을)을 한두 문장으로 적어주세요.
+      - name: apply_link
+        label: 신청 링크
+        widget: string
+        required: false
+      - name: published
+        label: 공개
+        widget: boolean
+        hint: 끄면 사이트와 AI에게 보이지 않아요(임시 저장용).
+        default: true
+      - name: body
+        label: 상세 안내
+        widget: markdown
+        required: false
+  - name: faq
+    label: 자주 묻는 질문
+    label_singular: 질문
+    description: 학생들이 자주 묻는 질문과 답. AI 비서가 가장 많이 참고하는 곳이에요.
+    icon: quiz
+    folder: content/faq
+    create: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
+    preview_path: faq/{{slug}}/
+    summary: '{{title}}'
+    fields:
+      - name: title
+        label: 질문
+        widget: string
+        hint: '학생이 실제로 물어볼 말투로. 예: 졸업하려면 인턴을 꼭 해야 하나요?'
+      - name: category
+        label: 분류
+        widget: select
+        default: 기타
+        options:
+          - 학사
+          - 졸업
+          - 수강
+          - 장학
+          - 진로
+          - 행사
+          - 복지
+          - 시설
+          - 학생회
+          - 기타
+      - name: summary
+        label: 짧은 답
+        widget: text
+        hint: 한두 문장으로 결론부터.
+      - name: source
+        label: 근거 링크 (선택)
+        widget: string
+        required: false
+        hint: 학과 홈페이지, 학칙 등 확인할 수 있는 곳
+      - name: updated
+        label: 확인한 날짜
+        widget: datetime
+        hint: 정보가 맞는지 마지막으로 확인한 날
+        default: '{{now}}'
+        type: date
+        format: YYYY-MM-DD
+      - name: published
+        label: 공개
+        widget: boolean
+        hint: 끄면 사이트와 AI에게 보이지 않아요(임시 저장용).
+        default: true
+      - name: body
+        label: 자세한 답
+        widget: markdown
+        required: false
+  - name: guides
+    label: 학과 생활 가이드
+    label_singular: 가이드
+    description: 졸업요건, 과방 이용법, 학생회 소개처럼 길게 정리해 두는 안내문.
+    icon: menu_book
+    folder: content/guides
+    create: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
+    preview_path: guides/{{slug}}/
+    summary: '{{title}}'
+    fields:
+      - name: title
+        label: 제목
+        widget: string
+      - name: category
+        label: 분류
+        widget: select
+        default: 기타
+        options:
+          - 학사
+          - 졸업
+          - 수강
+          - 장학
+          - 진로
+          - 행사
+          - 복지
+          - 시설
+          - 학생회
+          - 기타
+      - name: summary
+        label: 한 줄 요약
+        widget: text
+        required: false
+        hint: AI 비서가 가장 먼저 읽는 문장이에요. 핵심(누가·언제·어디서·무엇을)을 한두 문장으로 적어주세요.
+      - name: updated
+        label: 확인한 날짜
+        widget: datetime
+        default: '{{now}}'
+        type: date
+        format: YYYY-MM-DD
+      - name: order
+        label: 정렬 순서
+        widget: number
+        required: false
+        hint: 작은 숫자가 먼저 나와요
+        value_type: int
+      - name: published
+        label: 공개
+        widget: boolean
+        hint: 끄면 사이트와 AI에게 보이지 않아요(임시 저장용).
+        default: true
+      - name: body
+        label: 본문
+        widget: markdown
+        required: false
+  - name: career
+    label: IE 커리어 아카이브
+    label_singular: 커리어 기록
+    description: 선배들의 직무·인턴·취업·대학원 후기.
+    icon: work
+    folder: content/career
+    create: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
+    preview_path: career/{{slug}}/
+    summary: '{{title}}'
+    fields:
+      - name: title
+        label: 제목
+        widget: string
+        hint: '예: SCM 직무 인턴 후기'
+      - name: kind
+        label: 종류
+        widget: select
+        default: 직무 소개
+        options:
+          - 직무 소개
+          - 인턴 후기
+          - 취업 후기
+          - 대학원
+          - 대외활동
+          - 자격증·시험
+          - 기타
+      - name: field
+        label: 분야·직무
+        widget: string
+        required: false
+        hint: '예: SCM, 데이터 분석, 컨설팅, 생산관리'
+      - name: company
+        label: 회사·기관 (선택)
+        widget: string
+        required: false
+      - name: year
+        label: 연도
+        widget: number
+        required: false
+        value_type: int
+      - name: author
+        label: 작성자 표기
+        widget: string
+        required: false
+        hint: 실명 대신 "19학번 선배"처럼 적어도 돼요
+      - name: summary
+        label: 한 줄 요약
+        widget: text
+        required: false
+        hint: AI 비서가 가장 먼저 읽는 문장이에요. 핵심(누가·언제·어디서·무엇을)을 한두 문장으로 적어주세요.
+      - name: published
+        label: 공개
+        widget: boolean
+        hint: 끄면 사이트와 AI에게 보이지 않아요(임시 저장용).
+        default: true
+      - name: body
+        label: 본문
+        widget: markdown
+        required: false
+  - name: mentors
+    label: Home-coming 선배 멘토
+    label_singular: 멘토
+    description: 후배 멘토링에 참여하는 선배 목록. 연락처는 본인 동의를 받은 방법만 적어주세요.
+    icon: diversity_3
+    folder: content/mentors
+    create: true
+    extension: md
+    format: frontmatter
+    slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
+    preview_path: mentors/{{slug}}/
+    summary: '{{title}}'
+    fields:
+      - name: title
+        label: 이름 또는 닉네임
+        widget: string
+      - name: cohort
+        label: 학번
+        widget: string
+        required: false
+        hint: '예: 18학번'
+      - name: field
+        label: 분야·직무
+        widget: string
+        required: false
+      - name: company
+        label: 소속 (선택)
+        widget: string
+        required: false
+      - name: topics
+        label: 상담 가능 주제
+        widget: list
+        required: false
+        hint: '쉼표로 구분. 예: 취업, 대학원, 교환학생'
+      - name: contact
+        label: 신청 방법
+        widget: text
+        required: false
+        hint: 개인 연락처 대신 학생회 신청 폼 등을 권장해요
+      - name: available
+        label: 현재 멘토링 가능
+        widget: boolean
+        default: true
+      - name: summary
+        label: 한 줄 요약
+        widget: text
+        required: false
+        hint: AI 비서가 가장 먼저 읽는 문장이에요. 핵심(누가·언제·어디서·무엇을)을 한두 문장으로 적어주세요.
+      - name: published
+        label: 공개
+        widget: boolean
+        hint: 끄면 사이트와 AI에게 보이지 않아요(임시 저장용).
+        default: true
+      - name: body
+        label: 소개
+        widget: markdown
+        required: false
+  - name: settings
+    label: 설정·바로가기
+    icon: settings
+    files:
+      - name: site
+        label: 학생회 기본 정보
+        file: data/site.yml
+        fields:
+          - name: name
+            label: 학생회 이름
+            widget: string
+          - name: term
+            label: 임기
+            widget: string
+            hint: '예: 2027학년도'
+          - name: department
+            label: 학과
+            widget: string
+          - name: intro
+            label: 소개
+            widget: text
+          - name: officers
+            label: 임원진
+            widget: list
+            fields:
+              - name: role
+                label: 직책
+                widget: string
+              - name: name
+                label: 이름
+                widget: string
+            summary: '{{role}}'
+          - name: contacts
+            label: 연락 창구
+            widget: list
+            fields:
+              - name: label
+                label: 이름
+                widget: string
+                hint: '예: 인스타그램, 익명 건의 카톡방'
+              - name: url
+                label: 주소
+                widget: string
+              - name: note
+                label: 설명
+                widget: string
+                required: false
+            summary: '{{label}}'
+      - name: links
+        label: 바로가기 사이트
+        file: data/links.yml
+        fields:
+          - name: links
+            label: 바로가기 목록
+            widget: list
+            fields:
+              - name: name
+                label: 사이트 이름
+                widget: string
+              - name: url
+                label: 주소
+                widget: string
+              - name: description
+                label: 여기서 할 수 있는 일
+                widget: string
+                hint: AI가 어떤 질문에 이 링크를 줄지 판단하는 데 써요
+              - name: category
+                label: 분류
+                widget: select
+                default: 기타
+                options:
+                  - 학사
+                  - 졸업
+                  - 수강
+                  - 장학
+                  - 진로
+                  - 행사
+                  - 복지
+                  - 시설
+                  - 학생회
+                  - 기타
+            summary: '{{name}}'

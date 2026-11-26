@@ -1,0 +1,10 @@
+name: HOMie
+term: 2027학년도
+department: 한양대학교 산업공학과
+intro: 2027학년도 한양대학교 산업공학과 학생회 HOMie입니다. 학번과 상관없이 다 같이 어울리는 학과, 필요한 정보를 쉽게 찾는 학과를 만듭니다.
+officers:
+  - role: 학생회장
+    name: 정현우
+  - role: 부학생회장
+    name: 김상우
+contacts: []
