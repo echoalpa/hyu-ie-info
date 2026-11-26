@@ -1,12 +1,13 @@
-# 산공 정보 · HOMie
+# 산공 정보
 
-한양대학교 산업공학과 학생회 **HOMie**가 운영하는 학과 정보 사이트입니다.
-사람도 읽고, 피클·인스팅트·ChatGPT·Claude 같은 **AI 비서도 읽도록** 만들었습니다.
+한양대학교 산업공학과 정보를 **AI 비서가 매일 읽고 기억하도록** 모아 두는 사이트입니다.
+사람이 보는 화면은 따로 없고, 학생회는 관리 화면에서 글만 쓰면 됩니다.
+
+관리자: 정학생회장 정현우 (010-4694-8902)
 
 | | 주소 |
 |---|---|
-| 공개 사이트 | https://echoalpa.github.io/hyu-ie-info/ |
-| AI 비서에게 줄 주소 | https://echoalpa.github.io/hyu-ie-info/llms.txt |
+| AI 비서에게 줄 주소 | https://echoalpa.github.io/hyu-ie-info/llms-full.txt |
 | 관리 화면 | https://echoalpa.github.io/hyu-ie-info/admin/ |
 | 관리자 안내 | https://echoalpa.github.io/hyu-ie-info/admin/help.html |
 
@@ -16,12 +17,11 @@
 content/          ← 글 (관리 화면에서 쓰면 여기 저장됨)
   notices/        공지사항
   events/         행사·일정
-  faq/            자주 묻는 질문
   guides/         학과 생활 가이드
-  career/         IE 커리어 아카이브
-  mentors/        Home-coming 선배 멘토
+  career/         커리어 아카이브
+  mentors/        선배 멘토
 data/
-  site.yml        학생회 기본 정보·연락 창구
+  site.yml        사이트 이름·관리자 연락처
   links.yml       바로가기 사이트
 static/           이미지·파비콘·업로드 파일
 admin/            관리 화면 (Sveltia CMS)
@@ -36,14 +36,16 @@ scripts/build.mjs 사이트 생성기
 
 | 파일 | 내용 |
 |---|---|
-| `/llms.txt` | 사이트 안내 + 모든 글 목록 ([llmstxt.org](https://llmstxt.org) 형식) |
-| `/llms-full.txt` | 모든 글 전문을 한 파일로 |
+| `/llms-full.txt` | **오늘 기준 전체 정보 한 파일** (최근 7일 변경, 다가오는 일정, 모든 글, 관련 링크) |
+| `/` (index.html) | 위와 같은 내용을 HTML 한 장으로 |
+| `/llms.txt` | 짧은 안내 + 글 목록 ([llmstxt.org](https://llmstxt.org) 형식) |
 | `/api/all.json`, `/api/<분류>.json` | 구조화된 데이터 |
 | `/api/upcoming.json` | 아직 끝나지 않은 행사·일정 |
+| `/api/recent.json` | 최근 7일 새로 생기거나 바뀐 글 |
 | `/<분류>/<글>.md` | 각 글의 마크다운 버전 |
-| `/sitemap.xml`, `/robots.txt`, `/feed.xml` | 크롤러·RSS |
+| `/sitemap.xml`, `/robots.txt` | 크롤러용 |
 
-각 HTML 페이지에는 schema.org JSON-LD(Event, FAQPage, Article, Person)가 들어 있습니다.
+모든 글에는 **관련 링크**(외부 원문 사이트)를 붙일 수 있고, AI는 정보가 부족하면 그 링크로 넘어가 확인합니다.
 모든 시간은 한국시간(KST) 기준입니다.
 
 ## 관리 화면 쓰는 법 (학생회원)
@@ -59,7 +61,7 @@ scripts/build.mjs 사이트 생성기
 
 ```bash
 npm install
-npm run dev          # 빌드 후 http://localhost:8080/hyu-ie-info/
+npm run build        # _site/ 에 생성
 npm run gen-config   # schema.mjs 수정 후 관리 화면 설정 재생성
 ```
 

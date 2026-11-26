@@ -6,8 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "gen-config": "node scripts/gen-config.mjs",
-    "check": "node scripts/check-config.mjs",
-    "dev": "node scripts/build.mjs && node scripts/serve.mjs"
+    "check": "node scripts/check-config.mjs"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",

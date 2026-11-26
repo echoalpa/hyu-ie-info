@@ -21,6 +21,15 @@ const summary = {
   hint: 'AI 비서가 가장 먼저 읽는 문장이에요. 핵심(누가·언제·어디서·무엇을)을 한두 문장으로 적어주세요.',
 };
 const body = (label = '본문') => ({ name: 'body', label, widget: 'markdown', required: false });
+const refs = {
+  name: 'refs', label: '관련 링크', widget: 'list', required: false,
+  hint: '더 자세한 정보가 있는 다른 사이트(학과 홈페이지, 포털 공지, 신청 폼 등). AI 비서가 이 링크로 넘어가서 추가로 확인해요.',
+  fields: [
+    { name: 'name', label: '링크 이름', widget: 'string', hint: '예: 학과 홈페이지 졸업요건 안내' },
+    { name: 'url', label: '주소', widget: 'string', hint: 'https:// 로 시작하는 주소' },
+    { name: 'description', label: '여기서 확인할 수 있는 것 (선택)', widget: 'string', required: false },
+  ],
+};
 const category = { name: 'category', label: '분류', widget: 'select', options: CATS, default: '기타' };
 
 export const collections = [
@@ -37,6 +46,7 @@ export const collections = [
       { name: 'deadline', label: '마감일 (있으면)', widget: 'date', required: false },
       { name: 'link', label: '원문·신청 링크', widget: 'string', required: false, hint: 'https:// 로 시작하는 주소' },
       { name: 'pinned', label: '상단 고정', widget: 'boolean', default: false },
+      refs,
       published,
       body(),
     ],
@@ -55,28 +65,14 @@ export const collections = [
       { name: 'kind', label: '종류', widget: 'select', options: ['학생회 행사', '학과 행사', '학사 일정', '복지', '진로', '기타'], default: '학생회 행사' },
       summary,
       { name: 'apply_link', label: '신청 링크', widget: 'string', required: false },
+      refs,
       published,
       body('상세 안내'),
     ],
   },
   {
-    name: 'faq', label: '자주 묻는 질문', singular: '질문', icon: 'quiz',
-    description: '학생들이 자주 묻는 질문과 답. AI 비서가 가장 많이 참고하는 곳이에요.',
-    schemaType: 'FAQ',
-    sort: (a, b) => cmp(a.category, b.category) || cmp(a.title, b.title),
-    fields: [
-      { name: 'title', label: '질문', widget: 'string', hint: '학생이 실제로 물어볼 말투로. 예: 졸업하려면 인턴을 꼭 해야 하나요?' },
-      category,
-      { name: 'summary', label: '짧은 답', widget: 'text', hint: '한두 문장으로 결론부터.' },
-      { name: 'source', label: '근거 링크 (선택)', widget: 'string', required: false, hint: '학과 홈페이지, 학칙 등 확인할 수 있는 곳' },
-      { name: 'updated', label: '확인한 날짜', widget: 'date', default: '{{now}}', hint: '정보가 맞는지 마지막으로 확인한 날' },
-      published,
-      body('자세한 답'),
-    ],
-  },
-  {
     name: 'guides', label: '학과 생활 가이드', singular: '가이드', icon: 'menu_book',
-    description: '졸업요건, 과방 이용법, 학생회 소개처럼 길게 정리해 두는 안내문.',
+    description: '졸업요건, 과방 이용법처럼 길게 정리해 두는 안내문.',
     schemaType: 'Article',
     sort: (a, b) => (a.order ?? 99) - (b.order ?? 99) || cmp(a.title, b.title),
     fields: [
@@ -85,12 +81,13 @@ export const collections = [
       summary,
       { name: 'updated', label: '확인한 날짜', widget: 'date', default: '{{now}}' },
       { name: 'order', label: '정렬 순서', widget: 'number', required: false, hint: '작은 숫자가 먼저 나와요' },
+      refs,
       published,
       body(),
     ],
   },
   {
-    name: 'career', label: 'IE 커리어 아카이브', singular: '커리어 기록', icon: 'work',
+    name: 'career', label: '커리어 아카이브', singular: '커리어 기록', icon: 'work',
     description: '선배들의 직무·인턴·취업·대학원 후기.',
     schemaType: 'Article',
     sort: (a, b) => (b.year ?? 0) - (a.year ?? 0) || cmp(a.title, b.title),
@@ -102,12 +99,13 @@ export const collections = [
       { name: 'year', label: '연도', widget: 'number', required: false },
       { name: 'author', label: '작성자 표기', widget: 'string', required: false, hint: '실명 대신 "19학번 선배"처럼 적어도 돼요' },
       summary,
+      refs,
       published,
       body(),
     ],
   },
   {
-    name: 'mentors', label: 'Home-coming 선배 멘토', singular: '멘토', icon: 'diversity_3',
+    name: 'mentors', label: '선배 멘토', singular: '멘토', icon: 'diversity_3',
     description: '후배 멘토링에 참여하는 선배 목록. 연락처는 본인 동의를 받은 방법만 적어주세요.',
     schemaType: 'Person',
     sort: (a, b) => (b.available - a.available) || cmp(a.title, b.title),
@@ -117,9 +115,10 @@ export const collections = [
       { name: 'field', label: '분야·직무', widget: 'string', required: false },
       { name: 'company', label: '소속 (선택)', widget: 'string', required: false },
       { name: 'topics', label: '상담 가능 주제', widget: 'list', required: false, hint: '쉼표로 구분. 예: 취업, 대학원, 교환학생' },
-      { name: 'contact', label: '신청 방법', widget: 'text', required: false, hint: '개인 연락처 대신 학생회 신청 폼 등을 권장해요' },
+      { name: 'contact', label: '신청 방법', widget: 'text', required: false, hint: '본인 동의를 받은 연락 방법만 적어주세요' },
       { name: 'available', label: '현재 멘토링 가능', widget: 'boolean', default: true },
       summary,
+      refs,
       published,
       body('소개'),
     ],
@@ -129,25 +128,17 @@ export const collections = [
 // 파일 하나로 관리하는 설정형 데이터
 export const files = [
   {
-    name: 'site', label: '학생회 기본 정보', file: 'data/site.yml', icon: 'info',
+    name: 'site', label: '사이트 기본 정보', file: 'data/site.yml', icon: 'info',
     fields: [
-      { name: 'name', label: '학생회 이름', widget: 'string' },
-      { name: 'term', label: '임기', widget: 'string', hint: '예: 2027학년도' },
+      { name: 'name', label: '사이트 이름', widget: 'string' },
       { name: 'department', label: '학과', widget: 'string' },
-      { name: 'intro', label: '소개', widget: 'text' },
+      { name: 'intro', label: '소개', widget: 'text', required: false },
       {
-        name: 'officers', label: '임원진', widget: 'list',
+        name: 'managers', label: '관리자', widget: 'list',
         fields: [
-          { name: 'role', label: '직책', widget: 'string' },
+          { name: 'role', label: '직책', widget: 'string', hint: '예: 정학생회장' },
           { name: 'name', label: '이름', widget: 'string' },
-        ],
-      },
-      {
-        name: 'contacts', label: '연락 창구', widget: 'list',
-        fields: [
-          { name: 'label', label: '이름', widget: 'string', hint: '예: 인스타그램, 익명 건의 카톡방' },
-          { name: 'url', label: '주소', widget: 'string' },
-          { name: 'note', label: '설명', widget: 'string', required: false },
+          { name: 'phone', label: '연락처', widget: 'string', required: false },
         ],
       },
     ],
