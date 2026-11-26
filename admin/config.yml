@@ -564,3 +564,51 @@ collections:
                   - 학생회
                   - 기타
             summary: '{{name}}'
+  - name: academic
+    label: 학사일정 (학교 공식·자동)
+    icon: calendar_month
+    readonly: true
+    editor:
+      preview: false
+    files:
+      - name: academic
+        label: 학사일정 (학교 공식·자동)
+        file: data/academic.yml
+        fields:
+          - name: source
+            label: 출처
+            widget: string
+            hint: 매일 0시에 이 학교 페이지와 자동으로 맞춰져요. 여기서 고쳐도 다음 동기화 때 덮어써지니, 학과 자체 일정은 "행사·일정"에 넣어주세요.
+            readonly: true
+          - name: synced_at
+            label: 마지막으로 바뀐 날
+            widget: datetime
+            readonly: true
+            type: date
+            format: YYYY-MM-DD
+          - name: items
+            label: 학사일정
+            widget: list
+            readonly: true
+            fields:
+              - name: title
+                label: 일정
+                widget: string
+                readonly: true
+              - name: start
+                label: 시작
+                widget: datetime
+                readonly: true
+                type: date
+                format: YYYY-MM-DD
+              - name: end
+                label: 끝
+                widget: datetime
+                required: false
+                readonly: true
+                type: date
+                format: YYYY-MM-DD
+            summary: '{{start}} {{title}}'
+            allow_add: false
+            allow_remove: false
+            allow_reorder: false

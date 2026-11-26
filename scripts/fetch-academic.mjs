@@ -10,6 +10,7 @@ const P = 'kr_ac_hanyang_calendar_web_portlet_CalendarViewPortlet';
 const api = (y) => `${PAGE}?p_p_id=${P}&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_cacheability=cacheLevelPage&_${P}_cmd=get_term_events&_${P}_sYear=${y}`;
 const FILE = 'data/academic.yml';
 const SKIP = /\(ERICA\)/; // 산업공학과는 서울캠퍼스
+const FROM = '2027-01-01'; // 이 날짜 이전에 시작하는 일정은 넣지 않음 (2026년 일정 제외)
 
 async function fromWeb() {
   const y = Number(new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 4));
@@ -32,7 +33,7 @@ const rows = process.argv[2]
 
 const seen = new Set();
 const items = rows
-  .filter(([s, , t]) => /^\d{4}-\d\d-\d\d$/.test(s) && t && !SKIP.test(t))
+  .filter(([s, , t]) => /^\d{4}-\d\d-\d\d$/.test(s) && s >= FROM && t && !SKIP.test(t))
   .map(([start, end, title]) => ({ title: title.replace(/\s+/g, ' ').replace(/\(서울\)$/, '').trim(), start, ...(end && end !== start ? { end } : {}) }))
   .filter((i) => { const k = `${i.start}|${i.title}`; if (seen.has(k)) return false; seen.add(k); return true; })
   .sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title, 'ko'));

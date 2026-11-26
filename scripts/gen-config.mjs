@@ -10,12 +10,13 @@ function svField(f) {
   const o = { name: f.name, label: f.label, widget: f.widget };
   if (f.required === false) o.required = false;
   if (f.hint) o.hint = f.hint;
+  if (f.readonly) o.readonly = true;
   if (f.default !== undefined) o.default = f.default;
   if (f.widget === 'select') o.options = f.options;
   if (f.widget === 'date') { o.widget = 'datetime'; o.type = 'date'; o.format = 'YYYY-MM-DD'; }
   if (f.widget === 'datetime') { o.format = 'YYYY-MM-DDTHH:mm'; }
   if (f.widget === 'number') { o.value_type = 'int'; }
-  if (f.widget === 'list' && f.fields) { o.fields = f.fields.map(svField); o.summary = `{{${f.fields[0].name}}}`; }
+  if (f.widget === 'list' && f.fields) { o.fields = f.fields.map(svField); o.summary = f.fields.some((x) => x.name === 'start') ? '{{start}} {{title}}' : `{{${f.fields[0].name}}}`; if (f.readonly) { o.allow_add = false; o.allow_remove = false; o.allow_reorder = false; } }
   return o;
 }
 
@@ -51,8 +52,13 @@ const sveltia = {
     {
       name: 'settings', label: '설정·바로가기', icon: 'settings',
       editor: { preview: false },
-      files: files.map((f) => ({ name: f.name, label: f.label, file: f.file, fields: f.fields.map(svField) })),
+      files: files.filter((f) => !f.readonly).map((f) => ({ name: f.name, label: f.label, file: f.file, fields: f.fields.map(svField) })),
     },
+    // 자동으로 채워지는 데이터는 보기 전용 메뉴로 따로
+    ...files.filter((f) => f.readonly).map((f) => ({
+      name: f.name, label: f.label, icon: f.icon, readonly: true, editor: { preview: false },
+      files: [{ name: f.name, label: f.label, file: f.file, fields: f.fields.map(svField) }],
+    })),
   ],
 };
 

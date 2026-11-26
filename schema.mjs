@@ -147,6 +147,21 @@ export const files = [
     ],
   },
   {
+    name: 'academic', label: '학사일정 (학교 공식·자동)', file: 'data/academic.yml', icon: 'calendar_month', readonly: true,
+    fields: [
+      { name: 'source', label: '출처', widget: 'string', readonly: true, hint: '매일 0시에 이 학교 페이지와 자동으로 맞춰져요. 여기서 고쳐도 다음 동기화 때 덮어써지니, 학과 자체 일정은 "행사·일정"에 넣어주세요.' },
+      { name: 'synced_at', label: '마지막으로 바뀐 날', widget: 'date', readonly: true },
+      {
+        name: 'items', label: '학사일정', widget: 'list', readonly: true,
+        fields: [
+          { name: 'title', label: '일정', widget: 'string', readonly: true },
+          { name: 'start', label: '시작', widget: 'date', readonly: true },
+          { name: 'end', label: '끝', widget: 'date', required: false, readonly: true },
+        ],
+      },
+    ],
+  },
+  {
     name: 'links', label: '바로가기 사이트', file: 'data/links.yml', icon: 'link',
     fields: [
       {
