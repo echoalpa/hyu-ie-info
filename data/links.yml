@@ -11,3 +11,7 @@ links:
     url: https://library.hanyang.ac.kr
     description: 자료 검색, 열람실·스터디룸 예약
     category: 시설
+  - name: 한양대 현장실습지원
+    url: https://intern.hanyang.ac.kr/
+    description: 현장실습 공지, 가이드, 활용법, Q&A 확인
+    category: 진로
