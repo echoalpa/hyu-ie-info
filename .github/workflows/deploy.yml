@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '5 15 * * *'   # 매일 00:05 KST: 행사 "예정/종료" 상태 갱신
+    - cron: '5 15 * * *'   # 매일 00:05 KST: 학사일정 동기화 + "예정/종료" 상태 갱신
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # 학사일정 변경분을 저장소에 커밋
   pages: write
   id-token: write
 
@@ -28,6 +28,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: 한양대 학사일정 동기화
+        run: node scripts/fetch-academic.mjs
+      - name: 학사일정이 바뀌었으면 저장소에 기록
+        continue-on-error: true
+        run: |
+          if [ -n "$(git status --porcelain data/academic.yml)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898900+github-actions[bot]@users.noreply.github.com"
+            git add data/academic.yml
+            git commit -m "학사일정 자동 동기화"
+            git pull --rebase && git push
+          fi
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

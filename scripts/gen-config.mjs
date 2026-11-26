@@ -37,12 +37,20 @@ const sveltia = {
       name: c.name, label: c.label, label_singular: c.singular, description: c.description, icon: c.icon,
       folder: `content/${c.name}`, create: true, extension: 'md', format: 'frontmatter',
       slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}',
-      preview_path: `${c.name}/{{slug}}/`,
+      preview_path: `${c.name}/{{slug}}.md`,
       summary: '{{title}}',
+      editor: { preview: false },
+      ...(c.columns ? { table_columns: c.columns } : {}),
+      sortable_fields: c.fields.filter((f) => ['title', 'date', 'updated', 'year'].includes(f.name)).map((f) => f.name),
+      view_filters: [
+        { label: '공개 중', field: 'published', pattern: true },
+        { label: '비공개(임시·예시)', field: 'published', pattern: false },
+      ],
       fields: c.fields.map(svField),
     })),
     {
       name: 'settings', label: '설정·바로가기', icon: 'settings',
+      editor: { preview: false },
       files: files.map((f) => ({ name: f.name, label: f.label, file: f.file, fields: f.fields.map(svField) })),
     },
   ],
@@ -72,7 +80,7 @@ const pages = {
     ...collections.map((c) => ({
       name: c.name, label: c.label, type: 'collection', path: `content/${c.name}`,
       filename: '{year}{month}{day}-{hour}{minute}{second}.md',
-      view: { fields: c.fields.filter((f) => ['title', 'date', 'start', 'category', 'kind', 'published'].includes(f.name)).map((f) => f.name) },
+      view: { fields: c.fields.filter((f) => ['title', 'date', 'category', 'published'].includes(f.name)).map((f) => f.name) },
       fields: c.fields.map(pgField),
     })),
     ...files.map((f) => ({

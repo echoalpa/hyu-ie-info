@@ -38,6 +38,7 @@ export const collections = [
     description: '학생회·학과 공지. 마감일이 있으면 꼭 넣어주세요.',
     schemaType: 'Article',
     sort: (a, b) => (b.pinned - a.pinned) || cmp(b.date, a.date),
+    columns: ['title', 'date', 'category', 'pinned'],
     fields: [
       { name: 'title', label: '제목', widget: 'string' },
       { name: 'date', label: '게시일', widget: 'date', default: '{{now}}' },
@@ -53,13 +54,15 @@ export const collections = [
   },
   {
     name: 'events', label: '행사·일정', singular: '행사', icon: 'event',
-    description: '개강총회, 총MT, 간식행사, 시험기간 등 날짜가 있는 모든 일정.',
+    description: '학생회·학과 자체 행사(개강총회, MT, 간식행사 등). 학교 공식 학사일정은 매일 자동으로 들어오니 넣지 않아도 돼요.',
     schemaType: 'Event',
     sort: (a, b) => cmp(a.start, b.start),
+    columns: ['title', 'date', 'location'],
     fields: [
       { name: 'title', label: '행사명', widget: 'string' },
-      { name: 'start', label: '시작', widget: 'datetime' },
-      { name: 'end', label: '종료 (선택)', widget: 'datetime', required: false },
+      { name: 'date', label: '날짜', widget: 'date' },
+      { name: 'time', label: '시간 (선택)', widget: 'string', required: false, hint: '예: 18:00 또는 18:00~21:00. 하루 종일이면 비워두세요.' },
+      { name: 'end_date', label: '끝나는 날짜 (여러 날이면)', widget: 'date', required: false },
       { name: 'location', label: '장소', widget: 'string', required: false, hint: '예: 제1공학관 과방 앞' },
       { name: 'target', label: '대상', widget: 'string', required: false, hint: '예: 산업공학과 재학생 누구나' },
       { name: 'kind', label: '종류', widget: 'select', options: ['학생회 행사', '학과 행사', '학사 일정', '복지', '진로', '기타'], default: '학생회 행사' },

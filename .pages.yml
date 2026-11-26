@@ -96,27 +96,28 @@ content:
     view:
       fields:
         - title
-        - start
-        - kind
+        - date
         - published
     fields:
       - name: title
         label: 행사명
         type: string
         required: true
-      - name: start
-        label: 시작
+      - name: date
+        label: 날짜
         type: date
         required: true
         options:
-          time: true
-          format: yyyy-MM-dd'T'HH:mm
-      - name: end
-        label: 종료 (선택)
+          format: yyyy-MM-dd
+      - name: time
+        label: 시간 (선택)
+        type: string
+        description: '예: 18:00 또는 18:00~21:00. 하루 종일이면 비워두세요.'
+      - name: end_date
+        label: 끝나는 날짜 (여러 날이면)
         type: date
         options:
-          time: true
-          format: yyyy-MM-dd'T'HH:mm
+          format: yyyy-MM-dd
       - name: location
         label: 장소
         type: string
@@ -257,7 +258,6 @@ content:
     view:
       fields:
         - title
-        - kind
         - published
     fields:
       - name: title

@@ -23,6 +23,7 @@ content/          ← 글 (관리 화면에서 쓰면 여기 저장됨)
 data/
   site.yml        사이트 이름·관리자 연락처
   links.yml       바로가기 사이트
+  academic.yml    한양대 서울캠퍼스 공식 학사일정 (매일 자동 동기화, 직접 수정 X)
 static/           이미지·파비콘·업로드 파일
 admin/            관리 화면 (Sveltia CMS)
 schema.mjs        모든 입력 칸 정의 (여기만 고치면 관리 화면도 같이 바뀜)
@@ -30,7 +31,7 @@ scripts/build.mjs 사이트 생성기
 ```
 
 글을 저장하면 GitHub Actions가 1~2분 안에 사이트를 다시 만들어 GitHub Pages에 올립니다.
-매일 00:05(KST)에도 다시 만들어 행사의 "예정/종료" 상태를 갱신합니다.
+매일 00:05(KST)에는 한양대 홈페이지(https://www.hanyang.ac.kr/-33)의 학사일정을 가져와 `data/academic.yml`을 갱신하고(`scripts/fetch-academic.mjs`), 행사의 "예정/종료" 상태도 다시 계산합니다. 학교 사이트에 접속하지 못한 날은 기존 학사일정을 그대로 씁니다.
 
 ## AI가 읽는 파일
 
@@ -40,7 +41,8 @@ scripts/build.mjs 사이트 생성기
 | `/` (index.html) | 위와 같은 내용을 HTML 한 장으로 |
 | `/llms.txt` | 짧은 안내 + 글 목록 ([llmstxt.org](https://llmstxt.org) 형식) |
 | `/api/all.json`, `/api/<분류>.json` | 구조화된 데이터 |
-| `/api/upcoming.json` | 아직 끝나지 않은 행사·일정 |
+| `/api/upcoming.json` | 진행 중이거나 60일 안의 학사일정 + 학생회 행사 |
+| `/api/academic.json` | 학사일정 전체 |
 | `/api/recent.json` | 최근 7일 새로 생기거나 바뀐 글 |
 | `/<분류>/<글>.md` | 각 글의 마크다운 버전 |
 | `/sitemap.xml`, `/robots.txt` | 크롤러용 |

@@ -28,8 +28,25 @@ collections:
     extension: md
     format: frontmatter
     slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
-    preview_path: notices/{{slug}}/
+    preview_path: notices/{{slug}}.md
     summary: '{{title}}'
+    editor:
+      preview: false
+    table_columns:
+      - title
+      - date
+      - category
+      - pinned
+    sortable_fields:
+      - title
+      - date
+    view_filters:
+      - label: 공개 중
+        field: published
+        pattern: true
+      - label: 비공개(임시·예시)
+        field: published
+        pattern: false
     fields:
       - name: title
         label: 제목
@@ -106,28 +123,51 @@ collections:
   - name: events
     label: 행사·일정
     label_singular: 행사
-    description: 개강총회, 총MT, 간식행사, 시험기간 등 날짜가 있는 모든 일정.
+    description: 학생회·학과 자체 행사(개강총회, MT, 간식행사 등). 학교 공식 학사일정은 매일 자동으로 들어오니 넣지 않아도 돼요.
     icon: event
     folder: content/events
     create: true
     extension: md
     format: frontmatter
     slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
-    preview_path: events/{{slug}}/
+    preview_path: events/{{slug}}.md
     summary: '{{title}}'
+    editor:
+      preview: false
+    table_columns:
+      - title
+      - date
+      - location
+    sortable_fields:
+      - title
+      - date
+    view_filters:
+      - label: 공개 중
+        field: published
+        pattern: true
+      - label: 비공개(임시·예시)
+        field: published
+        pattern: false
     fields:
       - name: title
         label: 행사명
         widget: string
-      - name: start
-        label: 시작
+      - name: date
+        label: 날짜
         widget: datetime
-        format: YYYY-MM-DDTHH:mm
-      - name: end
-        label: 종료 (선택)
+        type: date
+        format: YYYY-MM-DD
+      - name: time
+        label: 시간 (선택)
+        widget: string
+        required: false
+        hint: '예: 18:00 또는 18:00~21:00. 하루 종일이면 비워두세요.'
+      - name: end_date
+        label: 끝나는 날짜 (여러 날이면)
         widget: datetime
         required: false
-        format: YYYY-MM-DDTHH:mm
+        type: date
+        format: YYYY-MM-DD
       - name: location
         label: 장소
         widget: string
@@ -196,8 +236,20 @@ collections:
     extension: md
     format: frontmatter
     slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
-    preview_path: guides/{{slug}}/
+    preview_path: guides/{{slug}}.md
     summary: '{{title}}'
+    editor:
+      preview: false
+    sortable_fields:
+      - title
+      - updated
+    view_filters:
+      - label: 공개 중
+        field: published
+        pattern: true
+      - label: 비공개(임시·예시)
+        field: published
+        pattern: false
     fields:
       - name: title
         label: 제목
@@ -272,8 +324,20 @@ collections:
     extension: md
     format: frontmatter
     slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
-    preview_path: career/{{slug}}/
+    preview_path: career/{{slug}}.md
     summary: '{{title}}'
+    editor:
+      preview: false
+    sortable_fields:
+      - title
+      - year
+    view_filters:
+      - label: 공개 중
+        field: published
+        pattern: true
+      - label: 비공개(임시·예시)
+        field: published
+        pattern: false
     fields:
       - name: title
         label: 제목
@@ -353,8 +417,19 @@ collections:
     extension: md
     format: frontmatter
     slug: '{{year}}{{month}}{{day}}-{{hour}}{{minute}}{{second}}'
-    preview_path: mentors/{{slug}}/
+    preview_path: mentors/{{slug}}.md
     summary: '{{title}}'
+    editor:
+      preview: false
+    sortable_fields:
+      - title
+    view_filters:
+      - label: 공개 중
+        field: published
+        pattern: true
+      - label: 비공개(임시·예시)
+        field: published
+        pattern: false
     fields:
       - name: title
         label: 이름 또는 닉네임
@@ -422,6 +497,8 @@ collections:
   - name: settings
     label: 설정·바로가기
     icon: settings
+    editor:
+      preview: false
     files:
       - name: site
         label: 사이트 기본 정보

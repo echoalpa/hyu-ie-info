@@ -41,6 +41,20 @@ function fmtKo(s) {
   const [h, m] = t.split(':').map(Number);
   return `${out} ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시${m ? ` ${m}분` : ''}`;
 }
+function statusOf(start, end) {
+  const e = end || start;
+  const endCmp = e.length === 10 ? e + 'T23:59' : e;
+  return NOW < start ? '예정' : NOW <= endCmp ? '진행 중' : '종료';
+}
+// 기간 표시: 같은 날이면 끝 시간만
+function fmtRange(start, end) {
+  if (!end || end === start) return fmtKo(start);
+  if (end.slice(0, 10) === start.slice(0, 10) && end.includes('T')) {
+    const [h, m] = end.slice(11).split(':').map(Number);
+    return `${fmtKo(start)} ~ ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시${m ? ` ${m}분` : ''}`;
+  }
+  return `${fmtKo(start)} ~ ${fmtKo(end)}`;
+}
 const iso = (s) => (s ? (s.length === 10 ? s : `${s}:00+09:00`) : undefined);
 
 // ---------- 유틸 ----------
@@ -100,10 +114,15 @@ for (const c of collections) {
     it.url = abs(it.path);
     it.md_url = abs(`${c.name}/${it.slug}.md`);
     if (c.name === 'events') {
-      if (!it.start) { warn(`${rel}: 시작 일시가 없어 건너뜀`); continue; }
-      const end = it.end || (it.start.length === 10 ? it.start : it.start.slice(0, 10));
-      const endCmp = end.length === 10 ? end + 'T23:59' : end;
-      it.status = NOW < it.start ? '예정' : NOW <= endCmp ? '진행 중' : '종료';
+      // 날짜 + 시간(선택, "18:00" 또는 "18:00~21:00") + 끝나는 날짜(선택) → start/end
+      const day = it.date || normTime(d.start)?.slice(0, 10);
+      if (!day) { warn(`${rel}: 날짜가 없어 건너뜀`); continue; }
+      const t = String(d.time ?? '').match(/(\d{1,2}):(\d\d)(?:\s*[~\-–]\s*(\d{1,2}):(\d\d))?/);
+      const hm = (h, m) => `${String(h).padStart(2, '0')}:${m}`;
+      it.start = d.start && !it.date ? normTime(d.start) : t ? `${day}T${hm(t[1], t[2])}` : day;
+      const endDay = it.end_date || (d.end ? normTime(d.end).slice(0, 10) : day);
+      it.end = d.end && !it.date ? normTime(d.end) : t && t[3] ? `${endDay}T${hm(t[3], t[4])}` : endDay !== day ? endDay : undefined;
+      it.status = statusOf(it.start, it.end);
     }
     if (c.name === 'notices' && it.deadline) it.deadline_passed = it.deadline < TODAY;
     items.push(it);
@@ -112,6 +131,21 @@ for (const c of collections) {
   db[c.name] = items;
 }
 const upcoming = db.events.filter((e) => e.status !== '종료');
+
+// 학교 공식 학사일정 (scripts/fetch-academic.mjs가 매일 갱신)
+const academicFile = readYaml('data/academic.yml', {});
+const academic = (academicFile.items || []).filter((a) => a && a.title && a.start).map((a) => {
+  const start = normTime(a.start), end = normTime(a.end);
+  return { title: String(a.title), start, end, status: statusOf(start, end) };
+});
+const AHEAD_DAYS = 60;
+const aheadCut = new Date(Date.parse(TODAY + 'T00:00:00Z') + AHEAD_DAYS * 864e5).toISOString().slice(0, 10);
+const academicSoon = academic.filter((a) => a.status !== '종료' && a.start.slice(0, 10) <= aheadCut);
+// 학생회 행사 + 학사일정을 합친 "다가오는 일정"
+const agenda = [
+  ...upcoming.map((e) => ({ kind: '학생회·학과 행사', title: e.title, start: e.start, end: e.end, status: e.status, location: e.location, md_url: e.md_url })),
+  ...academicSoon.map((a) => ({ kind: '학사일정', ...a })),
+].sort((a, b) => a.start.localeCompare(b.start));
 const all = collections.flatMap((c) => db[c.name]);
 
 // ---------- 사실(메타) 항목: HTML·마크다운·JSON 공통 ----------
@@ -120,7 +154,7 @@ function facts(it) {
   const add = (k, v) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length) && F.push([k, v]);
   switch (it.collection) {
     case 'notices': add('게시일', fmtKo(it.date)); add('분류', it.category); add('마감일', it.deadline && fmtKo(it.deadline) + (it.deadline_passed ? ' (마감됨)' : '')); add('링크', it.link); break;
-    case 'events': add('상태', it.status); add('시작', fmtKo(it.start)); add('종료', fmtKo(it.end)); add('장소', it.location); add('대상', it.target); add('종류', it.kind); add('신청', it.apply_link); break;
+    case 'events': add('상태', it.status); add('일시', fmtRange(it.start, it.end)); add('장소', it.location); add('대상', it.target); add('종류', it.kind); add('신청', it.apply_link); break;
     case 'guides': add('분류', it.category); add('확인한 날짜', fmtKo(it.updated)); break;
     case 'career': add('종류', it.kind); add('분야', it.field); add('회사·기관', it.company); add('연도', it.year); add('작성', it.author); break;
     case 'mentors': add('학번', it.cohort); add('분야', it.field); add('소속', it.company); add('상담 주제', (it.topics || []).join(', ')); add('멘토링', it.available ? '가능' : '현재 불가'); add('신청 방법', it.contact); break;
@@ -159,6 +193,10 @@ function toJson(it) {
 }
 
 // ---------- 하나의 문서: 오늘 기준 전체 정보 ----------
+const period = (a) => fmtRange(a.start, a.end);
+const agendaLine = (a) => `- ${period(a)} · [${a.kind}] ${a.title}${a.location ? ` · ${a.location}` : ''} (${a.status})`;
+const academicLine = (a) => `- ${period(a)} · ${a.title}${a.status === '진행 중' ? ' (진행 중)' : ''}`;
+
 function fullDoc() {
   let s = `# ${SITE_NAME}: ${siteInfo.department || '한양대학교 산업공학과'} 정보 (AI 비서용)
 
@@ -178,15 +216,19 @@ ${managersLine ? `- ${managersLine}\n` : ''}
 
 ${recent.length ? recent.map((i) => `- ${fmtKo(i.modified)} · [${colOf(i.collection).label}] ${i.title}${i.summary ? `: ${oneLine(i.summary)}` : ''}`).join('\n') : '(없음)'}
 
-## 다가오는 일정
+## 다가오는 일정 (진행 중 + 앞으로 ${AHEAD_DAYS}일, 학사일정 + 학생회·학과 행사)
 
-${upcoming.length ? upcoming.map((e) => `- ${fmtKo(e.start)}${e.end ? ` ~ ${fmtKo(e.end)}` : ''} · ${e.title}${e.location ? ` · ${e.location}` : ''} (${e.status})`).join('\n') : '(없음)'}
+${agenda.length ? agenda.map(agendaLine).join('\n') : '(없음)'}
 `;
   for (const c of collections) {
     const items = db[c.name];
     s += `\n---\n\n# ${c.label}\n\n${c.description}\n\n`;
     s += items.length ? items.map((it) => entryMd(it, '##')).join('\n') : '(아직 없음)\n';
   }
+  s += `\n---\n\n# 학사일정 (한양대학교 서울캠퍼스 공식)\n\n출처: ${academicFile.source || ''} (매일 자동 동기화, 마지막 변경 반영 ${fmtKo(normTime(academicFile.synced_at))}). 산업공학과는 서울캠퍼스입니다. 학사일정은 사정에 따라 바뀔 수 있으니 중요한 마감은 원문도 확인하라고 안내하세요.\n\n`;
+  const acNow = academic.filter((a) => a.status !== '종료');
+  const acPast = academic.filter((a) => a.status === '종료');
+  s += `## 진행 중이거나 앞으로 있을 학사일정\n\n${acNow.map(academicLine).join('\n') || '(없음)'}\n\n## 지난 학사일정\n\n${acPast.map(academicLine).join('\n') || '(없음)'}\n`;
   s += `\n---\n\n# 바로가기 사이트\n\n원문 확인이 필요할 때 안내할 사이트입니다.\n\n${links.map((l) => `- [${l.name}](${l.url})${l.category ? ` (${l.category})` : ''}: ${l.description || ''}`).join('\n') || '(아직 없음)'}\n`;
   if (managersLine) s += `\n---\n\n# 관리자\n\n${(siteInfo.managers || []).map((m) => `- ${m.role} ${m.name}${m.phone ? ` (${m.phone})` : ''}`).join('\n')}\n`;
   return s;
@@ -218,6 +260,12 @@ ${managersLine ? `- ${managersLine}\n` : ''}
 
 ${recent.map(line).join('\n') || '(없음)'}
 
+## 다가오는 일정 (앞으로 ${AHEAD_DAYS}일)
+
+${agenda.map(agendaLine).join('\n') || '(없음)'}
+
+학사일정 전체(한양대 서울캠퍼스 공식, 매일 자동 갱신): ${abs('llms-full.txt')} 의 "학사일정" 부분 또는 ${abs('api/academic.json')}
+
 `;
   for (const c of collections) {
     const items = c.name === 'events' ? upcoming : db[c.name];
@@ -233,7 +281,7 @@ ${recent.map(line).join('\n') || '(없음)'}
   const ld = {
     '@context': 'https://schema.org', '@graph': [
       { '@type': 'WebSite', name: SITE_NAME, url: abs(''), inLanguage: 'ko', publisher: { '@type': 'Organization', name: ORG_NAME } },
-      ...db.events.map((e) => ({ '@type': 'Event', name: e.title, description: e.summary, startDate: iso(e.start), endDate: iso(e.end), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode', location: e.location ? { '@type': 'Place', name: e.location, address: e.location } : undefined, organizer: { '@type': 'Organization', name: ORG_NAME } })),
+      ...[...db.events, ...academic.filter((a) => a.status !== '종료')].map((e) => ({ '@type': 'Event', name: e.title, description: e.summary, startDate: iso(e.start), endDate: iso(e.end), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode', location: e.location ? { '@type': 'Place', name: e.location, address: e.location } : undefined, organizer: { '@type': 'Organization', name: ORG_NAME } })),
     ],
   };
   const html = `<!doctype html>
@@ -261,9 +309,10 @@ ${marked.parse(FULL)}
 
 // JSON
 const meta = { site: SITE_NAME, department: siteInfo.department, publisher: ORG_NAME, managers: siteInfo.managers || [], generated_at: `${NOW}:00+09:00`, timezone: 'Asia/Seoul (KST, UTC+9)', source: abs('') };
-write('api/all.json', JSON.stringify({ ...meta, recent_days: RECENT_DAYS, recent: recent.map((i) => ({ collection: i.collection, title: i.title, modified: i.modified, md_url: i.md_url })), items: all.map(toJson), links }, null, 1));
+write('api/all.json', JSON.stringify({ ...meta, academic_calendar: academic, recent_days: RECENT_DAYS, recent: recent.map((i) => ({ collection: i.collection, title: i.title, modified: i.modified, md_url: i.md_url })), items: all.map(toJson), links }, null, 1));
 for (const c of collections) write(`api/${c.name}.json`, JSON.stringify({ ...meta, collection: c.name, label: c.label, items: db[c.name].map(toJson) }, null, 1));
-write('api/upcoming.json', JSON.stringify({ ...meta, note: '종료되지 않은 행사·일정. 상태는 generated_at 기준.', items: upcoming.map(toJson) }, null, 1));
+write('api/upcoming.json', JSON.stringify({ ...meta, note: `진행 중이거나 앞으로 ${AHEAD_DAYS}일 안의 학사일정 + 학생회·학과 행사. 상태는 generated_at 기준.`, items: agenda }, null, 1));
+write('api/academic.json', JSON.stringify({ ...meta, source: academicFile.source, synced_at: academicFile.synced_at, note: '한양대학교 서울캠퍼스 공식 학사일정', items: academic }, null, 1));
 write('api/recent.json', JSON.stringify({ ...meta, note: `최근 ${RECENT_DAYS}일 안에 새로 생기거나 수정된 글`, items: recent.map(toJson) }, null, 1));
 write('api/links.json', JSON.stringify({ ...meta, items: links }, null, 1));
 
